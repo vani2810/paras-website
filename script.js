@@ -1,126 +1,205 @@
-// DOM Elements
-const preloader = document.getElementById('preloader');
-const navbar = document.getElementById('navbar');
-const navMenu = document.getElementById('nav-menu');
-const hamburger = document.getElementById('hamburger');
-const navLinks = document.querySelectorAll('.nav-link');
-const faqItems = document.querySelectorAll('.faq-item');
-const contactForm = document.getElementById('contact-form');
+// Mobile Navigation Toggle
+const hamburger = document.querySelector('.hamburger');
+const navMenu = document.querySelector('.nav-menu');
 
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    // Preloader
-    setTimeout(() => {
-        preloader.classList.add('hidden');
-    }, 1500);
-
-    // Navbar scroll
-    window.addEventListener('scroll', handleNavbarScroll);
-
-    // Mobile menu
-    hamburger.addEventListener('click', toggleMobileMenu);
-
-    // Smooth scroll
-    navLinks.forEach(link => link.addEventListener('click', smoothScroll));
-
-    // Active nav link
-    window.addEventListener('scroll', handleActiveNav);
-
-    // FAQ toggle
-    faqItems.forEach(item => {
-        item.querySelector('.faq-question').addEventListener('click', () => {
-            item.classList.toggle('active');
-        });
-    });
-
-    // Contact form
-    contactForm.addEventListener('submit', handleContactForm);
-
-    // Scroll animations
-    window.addEventListener('scroll', handleScrollAnimations);
-
-    // Back to top
-    createBackToTop();
-});
-
-// Navbar scroll effect
-function handleNavbarScroll() {
-    navbar.classList.toggle('scrolled', window.scrollY > 100);
-}
-
-// Mobile menu toggle
-function toggleMobileMenu() {
+hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('active');
     navMenu.classList.toggle('active');
-}
+});
 
-// Smooth scrolling
-function smoothScroll(e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
-    const offsetTop = target.offsetTop - 80;
-    
-    window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
-    });
-    
-    toggleMobileMenu();
-}
+// Close mobile menu when clicking on a link
+document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+    hamburger.classList.remove('active');
+    navMenu.classList.remove('active');
+}));
 
-// Active nav link
-function handleActiveNav() {
-    let current = '';
-    document.querySelectorAll('section[id]').forEach(section => {
-        if (window.scrollY >= section.offsetTop - 150) {
-            current = section.getAttribute('id');
+// Smooth Scrolling
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
         }
     });
-    
-    navLinks.forEach(link => {
-        link.classList.toggle('active', link.getAttribute('href') === `#${current}`);
-    });
-}
+});
 
-// Scroll animations
-function handleScrollAnimations() {
-    document.querySelectorAll('.fade-in-up').forEach(el => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight - 100) {
-            el.classList.add('visible');
+// Navbar Background on Scroll
+window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar');
+    if (window.scrollY > 50) {
+        navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+        navbar.style.boxShadow = '0 4px 30px rgba(0,0,0,0.15)';
+    } else {
+        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+        navbar.style.boxShadow = '0 2px 20px rgba(0,0,0,0.1)';
+    }
+});
+
+// Fade In Animation on Scroll
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
         }
     });
-}
+}, observerOptions);
 
-// Contact form
-function handleContactForm(e) {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    const original = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        alert('Thank you! We will contact you within 24 hours on your phone number.');
-        e.target.reset();
-        btn.innerHTML = original;
-        btn.disabled = false;
-    }, 2000);
-}
+// Observe elements for animation
+document.querySelectorAll('.about, .services, .gallery, .testimonials, .contact, .faq, .service-card, .feature-item, .testimonial-card').forEach(el => {
+    el.classList.add('fade-in');
+    observer.observe(el);
+});
 
-// Back to top button
-function createBackToTop() {
-    const btn = document.createElement('button');
-    btn.className = 'back-to-top';
-    btn.innerHTML = '<i class="fas fa-chevron-up"></i>';
-    document.body.appendChild(btn);
-    
-    window.addEventListener('scroll', () => {
-        btn.classList.toggle('show', window.scrollY > 500);
-    });
-    
+// Gallery Filter
+const categoryBtns = document.querySelectorAll('.category-btn');
+const galleryItems = document.querySelectorAll('.gallery-item');
+
+categoryBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const category = btn.dataset.category;
+        
+        // Update active button
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Filter gallery items
+        galleryItems.forEach(item => {
+            if (category === 'all' || item.dataset.category === category) {
+                item.style.display = 'block';
+                item.style.opacity = '1';
+            } else {
+                item.style.display = 'none';
+                item.style.opacity = '0';
+            }
+        });
+    });
+});
+
+// Form Validation
+const contactForm = document.getElementById('contactForm');
+const nameInput = document.getElementById('name');
+const phoneInput = document.getElementById('phone');
+const projectTypeSelect = document.getElementById('projectType');
+const messageInput = document.getElementById('message');
+
+contactForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    // Validation
+    let isValid = true;
+    const errors = {};
+
+    // Name validation
+    if (!nameInput.value.trim()) {
+        errors.name = 'Name is required';
+        isValid = false;
+    }
+
+    // Phone validation
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneInput.value.trim() || !phoneRegex.test(phoneInput.value.trim())) {
+        errors.phone = 'Valid phone number is required (10 digits starting with 6-9)';
+        isValid = false;
+    }
+
+    // Project type validation
+    if (!projectTypeSelect.value) {
+        errors.projectType = 'Please select project type';
+        isValid = false;
+    }
+
+    // Message validation
+    if (!messageInput.value.trim()) {
+        errors.message = 'Message is required';
+        isValid = false;
+    }
+
+    // Show errors or submit
+    if (isValid) {
+        // Simulate form submission
+        alert('Thank you! Your message has been sent. We will contact you soon.');
+        contactForm.reset();
+    } else {
+        // Show validation errors
+        Object.keys(errors).forEach(key => {
+            const input = document.getElementById(key);
+            input.style.borderColor = '#e74c3c';
+            setTimeout(() => {
+                input.style.borderColor = '#e8e8e8';
+            }, 3000);
+        });
+        alert('Please fill all fields correctly.');
+    }
+});
+
+// Real-time form validation
+[nameInput, phoneInput, projectTypeSelect, messageInput].forEach(input => {
+    input.addEventListener('blur', () => {
+        input.style.borderColor = '#e8e8e8';
+    });
+    
+    input.addEventListener('input', () => {
+        if (input.value.trim()) {
+            input.style.borderColor = '#d4a574';
+        }
+    });
+});
+
+// FAQ Toggle
+document.querySelectorAll('.faq-question').forEach(question => {
+    question.addEventListener('click', () => {
+        const faqItem = question.parentElement;
+        const isActive = faqItem.classList.contains('active');
+        
+        // Close all FAQs
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Open clicked FAQ if it wasn't active
+        if (!isActive) {
+            faqItem.classList.add('active');
+        }
+    });
+});
+
+// Testimonials Auto Slider
+let currentTestimonial = 0;
+const testimonials = document.querySelectorAll('.testimonial-card');
+
+function nextTestimonial() {
+    testimonials.forEach(t => t.style.opacity = '0.5');
+    testimonials[currentTestimonial].style.opacity = '1';
+    currentTestimonial = (currentTestimonial + 1) % testimonials.length;
+}
+
+setInterval(nextTestimonial, 5000);
+
+// WhatsApp floating button (already in HTML but enhanced)
+const whatsappBtn = document.querySelector('.whatsapp-btn');
+if (whatsappBtn) {
+    whatsappBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const message = `Hi, I'm interested in your services for ${projectTypeSelect.value || 'a project'}.`;
+        const url = `https://wa.me/919623750228?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
     });
 }
+
+// Preloader (Optional - remove if not needed)
+window.addEventListener('load', () => {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.5s ease';
+    setTimeout(() => {
+        document.body.style.opacity = '1';
+    }, 100);
+});
